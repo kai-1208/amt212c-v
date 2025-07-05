@@ -47,10 +47,16 @@ using Anglef = Angle<float>;
 
 class Amt212CV {
 public:
+    enum class Mode {
+        Wrapped,  // 0 ~ 16383 ticks, 0 ~ 2pi radians
+        Continuous  // -inf ~ +inf
+    };
+
     Amt212CV(PinName tx, PinName rx, PinName dere, uint8_t address, int baud = 2000000);
     bool update();
     anglelib::Anglef get_angle() const;
-    uint16_t get_position() const;
+    int32_t get_position() const;
+    void set_mode(Mode m);
 
 private:
     UnbufferedSerial rs485;
@@ -61,13 +67,14 @@ private:
     anglelib::Anglef offset = anglelib::Anglef::from_rad(0.0f);
     anglelib::Anglef angle{};
     anglelib::Anglef last_angle{};
-    uint16_t ticks = 0;
+    int32_t ticks = 0;
     bool initialized = false;
+    Mode mode = Mode::Wrapped;
 
     void flush();
     void send(const void* data, size_t len);
     bool recv(void* data, size_t len, std::chrono::microseconds timeout);
-    bool read_angle(anglelib::Anglef& result);
+    bool read_angle(anglelib::Anglef& result, int16_t& delta_ticks);
     static bool is_valid(uint16_t data);
 };
 
